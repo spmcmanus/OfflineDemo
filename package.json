@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron ."
   },
-  "repository": "https://github.com/electron/electron-quick-start",
+  "repository": "https://github.com/spmcmanus/electron-pouch-auth.git",
   "keywords": [
     "Electron",
     "quick",
