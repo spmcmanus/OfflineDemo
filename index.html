@@ -6,6 +6,8 @@
     <title>Offline Demo</title>
     <link rel="stylesheet" href="style/base.css">
   </head>
+
+  <!-- BODY -->
   <body>
 
     <!-- TODO DISPLAY -->
@@ -76,25 +78,19 @@
         <br><br>
         <div id="delete-dbs">x</div>
       </footer>
-    <script src="node_modules/pouchdb/dist/pouchdb.min.js"></script>
-    <script src="node_modules/pouchdb-quick-search/dist/pouchdb.quick-search.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/azureAuth.js"></script>
+
   </body>
+
+  <!-- JS INCLUSIONS -->
+  <script src="node_modules/jquery/dist/jquery.min.js"></script>
+  <script src="node_modules/pouchdb/dist/pouchdb.min.js"></script>
+  <script src="node_modules/pouchdb-quick-search/dist/pouchdb.quick-search.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/azureAuth.js"></script>
   <script>
     window.onload = function () {
-      console.log("onload...initialize pouch");
       myPouch.init();
     }
   </script>
-  <script>
-	document.addEventListener("keydown", function (e) {
-    console.log(e)
-		if (e.which === 123) {
-			require('remote').getCurrentWindow().toggleDevTools();
-		} else if (e.which === 116) {
-			location.reload();
-		}
-	});
-</script>
+
 </html>

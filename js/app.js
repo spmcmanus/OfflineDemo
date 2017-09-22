@@ -1,5 +1,4 @@
-console.log("app.js");
-
+console.log("app.js")
 // needed npm modules
 const jquery = require('jquery');
 
@@ -22,8 +21,8 @@ var onlineMode = null;
 var viewLogin = jquery('#loginapp');
 var viewRegister = jquery('#registerapp');
 var viewMain = jquery('#todoapp');
-console.log(remoteCouch)
-// button listeners
+
+// button listener:  login
 jquery('#btn-login').on('click',function(){
   console.log("login");
   if (onlineMode == true) {
@@ -32,22 +31,15 @@ jquery('#btn-login').on('click',function(){
       myPouch.loginUserOffline();
   }
 });
-
+// button listener:  Create Offline User Account
 jquery('#btn-register').on('click',function(){
-    console.log("register new ");
     // O365 Authentication Goes HERE
     azureAuth.init();
-
     viewLogin.hide();
     viewRegister.show();
 });
-
-jquery('div#delete-dbs').on('click',function(){
-  myPouch.delete();
-});
-
+// submit new offline account
 jquery('#btn-register-submit').on('click',function(){
-    console.log("submit registration");
     if (jquery('#register-password-confirm').val() == jquery('#register-password-confirm').val()) {
           myPouch.registerUser();
     } else {
@@ -56,19 +48,19 @@ jquery('#btn-register-submit').on('click',function(){
       jquery('#register-message').html('<div style="color:red">Passwod and Confirm Password do not match, please try again</div>')
     }
 });
-
+// hidden button to clear local pouches
+jquery('div#delete-dbs').on('click',function(){
+  myPouch.delete();
+});
+// re-connect and sync manually
 jquery('#btn-manual-sync').on('click',function(){
-    console.log("attempt to sync");
     var urlExists = require('url-exists');
     urlExists(remoteCouch, function(err, exists) {
-      console.log('exists',exists)
       onlineMode = exists;
       if (exists == true) {
-        console.log("reconnecting")
         jquery('#connect-mode').html('You are working ONLINE');
         jquery('#btn-manual-sync').hide();
         jquery('#sync-message').html('');
-        console.log("now sync");
         myPouch.sync(authenticatedUser);
       } else {
         jquery('#connect-mode').html('You are working OFFLINE');
@@ -87,7 +79,6 @@ myPouch = {
     //check connectivity
     var urlExists = require('url-exists');
     urlExists(remoteCouch, function(err, exists) {
-      console.log('exists',exists)
       onlineMode = exists;
       if (exists == true) {
         jquery('#connect-mode').html('You are working ONLINE');
@@ -96,17 +87,14 @@ myPouch = {
         jquery('#connect-mode').html('You are working OFFLINE');
         jquery('#btn-register').hide();
       }
-    })
+    });
 
-    //myPouch.sync(authenticatedUser);
-    //myPouch.showTodos();
     myPouch.addEventListeners();
     myPouch.listen();
   },
 
 
   loginUserOffline: function() {
-    console.log('login offline')
     login_username = jquery('#login-username').val().toLowerCase();
     var userDb = new PouchDB('users');
     userDb.get(login_username).then(function (doc) {
@@ -116,7 +104,6 @@ myPouch = {
       var hashedPassword = doc.password;
       var passwordValid = passwordHash.verify(inputPassword,hashedPassword);
       if (passwordValid == true) {
-        console.log("AUTHENTICATED",login_username);
         authenticatedUser = login_username;
         // UI Updates
         viewMain.show();
@@ -125,7 +112,6 @@ myPouch = {
         // show reconnect button
         jquery('#btn-manual-sync').show();
       } else {
-        console.log("Login failed")
         jquery('#login-message').html('<div style="color:red">You have entered an incorrect username or password</div>');
       }
     }).catch(function (err) {
@@ -135,23 +121,20 @@ myPouch = {
   },
 
   loginUser: function() {
-    console.log('login online')
     login_username = jquery('#login-username').val().toLowerCase();
     if (userDb != undefined) {
-      console.log("destroy and rebuild userdb")
       userDb.destroy().then(function (response) {
-        console.log("userdb destroyed")
       }).catch(function (err) {
         console.log(err);
       });
     }
-
 
     var userOpts = {
       filter: function(doc) {
         return doc._id === login_username;
       }
     }
+
     var userDb = new PouchDB('users');
     userDb.replicate.from(remoteCouch,userOpts).on('complete',function(info){
       userDb.get(login_username).then(function (doc) {
@@ -161,7 +144,6 @@ myPouch = {
         var hashedPassword = doc.password;
         var passwordValid = passwordHash.verify(inputPassword,hashedPassword);
         if (passwordValid == true) {
-          console.log("AUTHENTICATED",login_username);
           //prepare sync options usings authenticated user
           var syncOptionsFrom = {
             live: true,
@@ -183,7 +165,6 @@ myPouch = {
           viewLogin.hide();
           myPouch.showTodos();
         } else {
-          console.log("Login failed")
           jquery('#login-message').html('<div style="color:red">You have entered an incorrect username or password</div>');
         }
       }).catch(function (err) {
@@ -195,10 +176,6 @@ myPouch = {
 
   // user registration methods
   registerUser: function() {
-    //TODO  validate password and confirm password are the same
-    //TODO  validate email address is validate
-    //TODO  mask password fields
-
     // retrieve entered password and create a hash of it
     var passwordHash = require('password-hash');
     var hashedPassword = passwordHash.generate(jquery('#register-password').val());
@@ -230,24 +207,9 @@ myPouch = {
     myPouch.validateUsername(user.username);
 },
 
-validateUsername: function(username) {
-  // checks the username against existing userRegistration documents and
-  // returns true if this username has not been used yet, otherwise returns false
-  console.log("validating username ",username)
-  // lookup to pouch to find this username as a user
-  //db.allDocs({include_docs: true, descending: true}, function(err, doc) {
-  //  console.log('docs',doc);
-  //});
-
-  //return false;
-},
-
-
   // utility functions
   // Initialise a sync with the remote server
   sync: function(authUser) {
-    console.log("syncing!!!",authUser);
-
     // replicate all docs going from remote
     var optsTo = {
       live: true,
@@ -261,18 +223,16 @@ validateUsername: function(username) {
         return doc.createdBy === authUser;
       }
     }
-    console.log("setAttribute")
     syncDom.setAttribute('data-sync-state', 'syncing');
-    console.log("to")
     db.replicate.to(remoteCouch, optsTo);
-    console.log("from: ",authUser)
     db.replicate.from(remoteCouch,optsFrom);
-    console.log("from crep complete")
   },
+
   // There was some form or error syncing
   syncError:function() {
     syncDom.setAttribute('data-sync-state', 'error');
   },
+
   delete: function() {
     db.destroy().then(function (response) {
       // success
@@ -287,10 +247,9 @@ validateUsername: function(username) {
       console.log(err);
     });
   },
+
   // listen for changes
   listen: function() {
-    console.log("in listen function");
-    console.log(db)
     db.changes({
       since: 'now',
       live: true
@@ -298,41 +257,11 @@ validateUsername: function(username) {
   },
   // Main application functions
   showTodos: function() {
-    console.log("show all todos")
     db.allDocs({include_docs: true, descending: true}, function(err, doc) {
-      console.log('docs',doc);
       myPouch.redrawTodosUI(doc.rows);
     });
   },
-  showTodosOld: function(mode,userData) {
-    //console.log('userData',userData)
-    if (userData == undefined || typeof(userData.mail) == 'undefined') {
-      console.log("don't update user data")
-    } else {
-      console.log("update user data")
-      authUserData = userData;
-    }
 
-    if (mode == 1) {
-      console.log("show all")
-      db.allDocs({include_docs: true, descending: true}, function(err, doc) {
-        console.log('docs',doc);
-        myPouch.redrawTodosUI(doc.rows);
-      });
-    } else {
-      console.log("filter on current user");
-      db.search({
-        query: authUserData.mail,
-        include_docs:true,
-        fields: ['createdBy']
-      }).then(function(res) {
-        //console.log('search docs',res);
-        myPouch.redrawTodosUI(res.rows);
-      }).catch(function(err){
-        console.log("search error",err)
-      })
-    }
-  },
   redrawTodosUI: function(todos) {
     var ul = document.getElementById('todo-list');
     ul.innerHTML = '';
@@ -342,30 +271,32 @@ validateUsername: function(username) {
       }
     });
   },
+
   // We have to create a new todo document and enter it in the database
   addTodo: function(text) {
-    console.log("adding todo")
     var todo = {
       _id: new Date().toISOString(),
       title: text,
       completed: false,
       createdBy: authenticatedUser
     };
-    console.log(todo)
     db.put(todo, function callback(err, result) {
       if (!err) {
         console.log('Successfully posted a todo!');
       }
     });
   },
+
   checkboxChanged: function(todo, event) {
     todo.completed = event.target.checked;
     db.put(todo);
   },
+
   // User pressed the delete button for a todo, delete it
   deleteButtonPressed: function(todo) {
     db.remove(todo);
   },
+
   // The input box when editing a todo has blurred, we should save
   // the new title or delete the todo if the title is empty
   todoBlurred: function(todo, event) {
@@ -377,6 +308,7 @@ validateUsername: function(username) {
       db.put(todo);
     }
   },
+
   // User has double clicked a todo, display an input so they can edit the title
   todoDblClicked: function(todo) {
     var div = document.getElementById('li_' + todo._id);
@@ -384,6 +316,7 @@ validateUsername: function(username) {
     div.className = 'editing';
     inputEditTodo.focus();
   },
+
   // If they press enter while editing an entry, blur it to trigger save
   // (or delete)
   todoKeyPressed: function(todo, event) {
@@ -392,6 +325,7 @@ validateUsername: function(username) {
       inputEditTodo.blur();
     }
   },
+
   // Given an object representing a todo, this will create a list item
   // to display it.
   createTodoListItem: function(todo) {
@@ -433,12 +367,14 @@ validateUsername: function(username) {
 
     return li;
   },
+
   newTodoKeyPressHandler: function(event) {
     if (event.keyCode === ENTER_KEY) {
       myPouch.addTodo(newTodoDom.value);
       newTodoDom.value = '';
     }
   },
+
   addEventListeners: function() {
     newTodoDom.addEventListener('keypress', myPouch.newTodoKeyPressHandler, false);
   }
